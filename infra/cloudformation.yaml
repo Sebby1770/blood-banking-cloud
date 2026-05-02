@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Blood Banking Via Cloud Computing — minimum AWS footprint:
+  RDS (PostgreSQL), S3 bucket for frontend hosting + reports, and an SNS topic
+  for low-stock alerts. EC2 / ALB are typically managed via Elastic Beanstalk
+  or a separate template; omitted here for clarity.
+
+Parameters:
+  DBUsername:
+    Type: String
+    NoEcho: true
+    Default: bloodbank
+  DBPassword:
+    Type: String
+    NoEcho: true
+    MinLength: 8
+  ReportsBucketName:
+    Type: String
+    Description: Globally-unique S3 bucket name for frontend + reports
+
+Resources:
+  BloodBankDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: postgres
+      EngineVersion: "16.3"
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      DBName: bloodbank
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      PubliclyAccessible: false
+      BackupRetentionPeriod: 7
+      DeletionProtection: false
+
+  ReportsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref ReportsBucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+
+  AlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: blood-bank-alerts
+      DisplayName: BloodBankAlerts
+
+Outputs:
+  RDSEndpoint:
+    Description: Connect string host
+    Value: !GetAtt BloodBankDB.Endpoint.Address
+  AlertsTopicArn:
+    Description: Set as SNS_TOPIC_ARN env var on the API
+    Value: !Ref AlertsTopic
+  ReportsBucket:
+    Description: Set as S3_BUCKET env var on the API; also serves the frontend
+    Value: !Ref ReportsBucket
