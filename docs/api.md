@@ -3,6 +3,18 @@
 Base URL: `http://localhost:4000` in development.
 All requests/responses are JSON.
 
+All routes except `GET /api/health` require an API token when
+`API_AUTH_TOKEN` is configured. Send it as either:
+
+```http
+X-API-Key: <API_AUTH_TOKEN>
+Authorization: Bearer <API_AUTH_TOKEN>
+```
+
+If this API is reached from a public browser bundle, treat the token as a
+deployment guard only. Browser environment variables are visible to users, so
+public dashboards need real user authentication or private access control.
+
 ## Health
 
 ```http

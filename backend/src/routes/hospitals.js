@@ -1,7 +1,9 @@
 const express = require('express');
 const { Hospital } = require('../models');
+const { pick } = require('../middleware/security');
 
 const router = express.Router();
+const HOSPITAL_FIELDS = ['name', 'city', 'contactEmail', 'contactPhone'];
 
 router.get('/', async (_req, res, next) => {
   try {
@@ -14,7 +16,7 @@ router.get('/', async (_req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const hospital = await Hospital.create(req.body);
+    const hospital = await Hospital.create(pick(req.body, HOSPITAL_FIELDS));
     res.status(201).json(hospital);
   } catch (err) {
     if (err.name === 'SequelizeValidationError') {

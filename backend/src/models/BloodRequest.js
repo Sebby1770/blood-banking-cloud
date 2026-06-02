@@ -8,7 +8,12 @@ const BloodRequest = sequelize.define('BloodRequest', {
     type: DataTypes.ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'),
     allowNull: false,
   },
-  unitsNeeded: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
+  unitsNeeded: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1,
+    validate: { min: 1, max: 100 },
+  },
   urgency: {
     type: DataTypes.ENUM('low', 'medium', 'high', 'critical'),
     allowNull: false,
