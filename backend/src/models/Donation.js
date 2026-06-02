@@ -8,7 +8,12 @@ const Donation = sequelize.define('Donation', {
     type: DataTypes.ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'),
     allowNull: false,
   },
-  units: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
+  units: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1,
+    validate: { min: 1, max: 100 },
+  },
   donatedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
 });
 

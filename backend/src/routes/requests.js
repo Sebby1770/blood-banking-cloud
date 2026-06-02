@@ -2,8 +2,14 @@ const express = require('express');
 const { BloodRequest, Hospital, BloodInventory } = require('../models');
 const { matchDonors } = require('../services/matchingService');
 const notify = require('../services/notificationService');
+const {
+  pick,
+  requireBloodGroup,
+  requirePositiveInteger,
+} = require('../middleware/security');
 
 const router = express.Router();
+const REQUEST_FIELDS = ['patientName', 'bloodGroup', 'unitsNeeded', 'urgency', 'hospitalId'];
 
 router.get('/', async (req, res, next) => {
   try {
@@ -22,7 +28,13 @@ router.get('/', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const request = await BloodRequest.create(req.body);
+    const body = pick(req.body, REQUEST_FIELDS);
+    body.unitsNeeded = Number(body.unitsNeeded ?? 1);
+    body.hospitalId = Number(body.hospitalId);
+    requireBloodGroup(body.bloodGroup);
+    requirePositiveInteger(body.unitsNeeded, 'unitsNeeded');
+    requirePositiveInteger(body.hospitalId, 'hospitalId', { max: 1_000_000 });
+    const request = await BloodRequest.create(body);
 
     // Auto-match compatible donors in the same city as the hospital, if known.
     const hospital = await Hospital.findByPk(request.hospitalId);
@@ -53,21 +65,36 @@ router.post('/', async (req, res, next) => {
 // Mark request fulfilled — decrements inventory by unitsNeeded.
 router.post('/:id/fulfill', async (req, res, next) => {
   try {
-    const request = await BloodRequest.findByPk(req.params.id);
-    if (!request) return res.status(404).json({ error: 'Request not found' });
-    if (request.status === 'fulfilled') {
-      return res.status(400).json({ error: 'Request already fulfilled' });
-    }
+    const result = await BloodRequest.sequelize.transaction(async (transaction) => {
+      const request = await BloodRequest.findByPk(req.params.id, { transaction });
+      if (!request) {
+        const error = new Error('Request not found');
+        error.status = 404;
+        throw error;
+      }
+      if (request.status === 'fulfilled') {
+        const error = new Error('Request already fulfilled');
+        error.status = 400;
+        throw error;
+      }
 
-    const inv = await BloodInventory.findOne({ where: { bloodGroup: request.bloodGroup } });
-    if (!inv || inv.units < request.unitsNeeded) {
-      return res.status(409).json({ error: 'Insufficient inventory to fulfill' });
-    }
+      const inv = await BloodInventory.findOne({
+        where: { bloodGroup: request.bloodGroup },
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (!inv || inv.units < request.unitsNeeded) {
+        const error = new Error('Insufficient inventory to fulfill');
+        error.status = 409;
+        throw error;
+      }
 
-    await inv.update({ units: inv.units - request.unitsNeeded });
-    await request.update({ status: 'fulfilled' });
+      await inv.update({ units: inv.units - request.unitsNeeded }, { transaction });
+      await request.update({ status: 'fulfilled' }, { transaction });
+      return { request, inventory: inv };
+    });
 
-    res.json({ request, inventory: inv });
+    res.json(result);
   } catch (err) {
     next(err);
   }

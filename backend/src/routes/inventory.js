@@ -1,6 +1,10 @@
 const express = require('express');
 const { BloodInventory } = require('../models');
 const notify = require('../services/notificationService');
+const {
+  requireBloodGroup,
+  requireIntegerDelta,
+} = require('../middleware/security');
 
 const router = express.Router();
 
@@ -21,18 +25,27 @@ router.get('/', async (_req, res, next) => {
 router.post('/adjust', async (req, res, next) => {
   try {
     const { bloodGroup, delta } = req.body;
-    if (!bloodGroup || typeof delta !== 'number') {
-      return res.status(400).json({ error: 'bloodGroup and numeric delta are required' });
-    }
+    const parsedDelta = Number(delta);
+    requireBloodGroup(bloodGroup);
+    requireIntegerDelta(parsedDelta);
 
-    let row = await BloodInventory.findOne({ where: { bloodGroup } });
-    if (!row) row = await BloodInventory.create({ bloodGroup, units: 0 });
+    const row = await BloodInventory.sequelize.transaction(async (transaction) => {
+      let inventory = await BloodInventory.findOne({
+        where: { bloodGroup },
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (!inventory) {
+        inventory = await BloodInventory.create({ bloodGroup, units: 0 }, { transaction });
+      }
 
-    const newUnits = Math.max(0, row.units + delta);
-    await row.update({ units: newUnits });
+      const newUnits = Math.max(0, inventory.units + parsedDelta);
+      await inventory.update({ units: newUnits }, { transaction });
+      return inventory;
+    });
 
-    if (newUnits < THRESHOLD()) {
-      await notify.lowStockAlert(bloodGroup, newUnits, THRESHOLD());
+    if (row.units < THRESHOLD()) {
+      await notify.lowStockAlert(row.bloodGroup, row.units, THRESHOLD());
     }
 
     res.json(row);
