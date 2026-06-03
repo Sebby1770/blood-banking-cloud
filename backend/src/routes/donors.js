@@ -1,7 +1,9 @@
 const express = require('express');
 const { Donor } = require('../models');
+const { pick } = require('../middleware/security');
 
 const router = express.Router();
+const DONOR_FIELDS = ['name', 'email', 'phone', 'bloodGroup', 'city', 'available'];
 
 // GET /api/donors?bloodGroup=O+&city=Mumbai
 router.get('/', async (req, res, next) => {
@@ -29,7 +31,7 @@ router.get('/:id', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const donor = await Donor.create(req.body);
+    const donor = await Donor.create(pick(req.body, DONOR_FIELDS));
     res.status(201).json(donor);
   } catch (err) {
     if (err.name === 'SequelizeValidationError' || err.name === 'SequelizeUniqueConstraintError') {
@@ -43,7 +45,7 @@ router.patch('/:id', async (req, res, next) => {
   try {
     const donor = await Donor.findByPk(req.params.id);
     if (!donor) return res.status(404).json({ error: 'Donor not found' });
-    await donor.update(req.body);
+    await donor.update(pick(req.body, DONOR_FIELDS));
     res.json(donor);
   } catch (err) {
     next(err);

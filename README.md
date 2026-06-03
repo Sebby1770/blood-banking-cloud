@@ -12,6 +12,7 @@ This repo is a **working starter app** built with **Node.js + Express + SQLite**
 - Match donors with recipient requests quickly
 - Send alerts when inventory drops below a configurable threshold
 - REST API accessible from anywhere (web, mobile, third-party integrations)
+- API token guard, scoped CORS, security headers, bounded JSON payloads, and transactional inventory writes
 - Donation-trend analytics endpoint (donations per month per blood group)
 - React dashboard for hospitals/admins
 - Optional AWS deployment (EC2 + RDS + S3 + SNS + Lambda)
@@ -103,7 +104,7 @@ blood-banking-cloud/
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 20.19+ and npm
 
 ### 1. Backend
 
@@ -111,6 +112,7 @@ blood-banking-cloud/
 cd backend
 npm install
 cp .env.example .env
+# Change API_AUTH_TOKEN before exposing the API.
 npm run seed       # creates blood_bank.sqlite with sample data
 npm run dev        # starts API on http://localhost:4000
 ```
@@ -122,6 +124,7 @@ In a second terminal:
 ```bash
 cd frontend
 npm install
+echo "VITE_API_TOKEN=<same token as backend API_AUTH_TOKEN>" > .env.local
 npm run dev        # starts UI on http://localhost:5173
 ```
 
@@ -148,6 +151,13 @@ Open <http://localhost:5173> — the dashboard will hit the local API.
 
 Full details in [`docs/api.md`](docs/api.md).
 
+All non-health API routes require `X-API-Key: <API_AUTH_TOKEN>` or
+`Authorization: Bearer <API_AUTH_TOKEN>` when `API_AUTH_TOKEN` is configured.
+In production, requests are rejected until this token is set.
+For public deployments, put the dashboard behind private access control or add
+real user authentication; Vite environment variables are visible in browser
+bundles and should not be treated as private secrets.
+
 ---
 
 ## Deploying to AWS
@@ -155,7 +165,7 @@ Full details in [`docs/api.md`](docs/api.md).
 See [`infra/deploy.md`](infra/deploy.md) for the step-by-step guide. In summary:
 
 1. Provision RDS (PostgreSQL) + an SNS topic + an S3 bucket via the CloudFormation template in `infra/cloudformation.yaml`.
-2. Set `DATABASE_URL`, `AWS_REGION`, `SNS_TOPIC_ARN`, and `S3_BUCKET` in the EC2 environment.
+2. Set `DATABASE_URL`, `API_AUTH_TOKEN`, `ALLOWED_ORIGINS`, `AWS_REGION`, `SNS_TOPIC_ARN`, and `S3_BUCKET` in the EC2 environment.
 3. `pm2 start backend/server.js` on EC2 (or wrap in a systemd unit).
 4. Build the frontend (`npm run build`) and host the `dist/` folder on S3 + CloudFront.
 5. Schedule a Lambda to hit `/api/inventory/check-thresholds` on a CloudWatch Events cron for proactive low-stock alerts.

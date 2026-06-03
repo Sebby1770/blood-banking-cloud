@@ -1,10 +1,16 @@
 // Tiny fetch wrapper. The Vite dev server proxies /api → http://localhost:4000.
 const BASE = '/api';
+const API_TOKEN = import.meta.env.VITE_API_TOKEN;
 
 async function request(path, opts = {}) {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(API_TOKEN ? { 'X-API-Key': API_TOKEN } : {}),
+    ...(opts.headers || {}),
+  };
   const res = await fetch(BASE + path, {
-    headers: { 'Content-Type': 'application/json' },
     ...opts,
+    headers,
   });
   if (!res.ok) {
     const text = await res.text();

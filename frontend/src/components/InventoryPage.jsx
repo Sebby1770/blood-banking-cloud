@@ -22,9 +22,9 @@ export default function InventoryPage() {
   return (
     <>
       <h2>Inventory</h2>
-      {error && <div className="card" style={{ color: 'var(--primary)' }}>{error}</div>}
+      {error && <div className="error-banner" style={{ marginBottom: 16 }}>{error}</div>}
       <div className="card">
-        <table>
+        <div className="table-wrap"><table>
           <thead>
             <tr><th>Blood group</th><th>Units</th><th>Status</th><th>Adjust</th></tr>
           </thead>
@@ -48,7 +48,7 @@ export default function InventoryPage() {
               );
             })}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </>
   );

@@ -11,7 +11,12 @@ const BloodInventory = sequelize.define('BloodInventory', {
     allowNull: false,
     unique: true,
   },
-  units: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+  units: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+    validate: { min: 0 },
+  },
 });
 
 module.exports = BloodInventory;

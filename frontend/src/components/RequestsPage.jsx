@@ -70,7 +70,7 @@ export default function RequestsPage() {
             <button className="primary" type="submit">Submit & match</button>
           </div>
         </form>
-        {error && <p style={{ color: 'var(--primary)' }}>{error}</p>}
+        {error && <p className="error-banner" style={{ marginTop: 12 }}>{error}</p>}
         {matched && (
           <div style={{ marginTop: 12 }}>
             <strong>Matched {matched.length} donor(s):</strong>{' '}
@@ -80,7 +80,7 @@ export default function RequestsPage() {
       </div>
 
       <div className="card">
-        <table>
+        <div className="table-wrap"><table>
           <thead>
             <tr><th>Patient</th><th>Group</th><th>Units</th><th>Urgency</th><th>Hospital</th><th>Status</th><th></th></tr>
           </thead>
@@ -105,7 +105,7 @@ export default function RequestsPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </>
   );
