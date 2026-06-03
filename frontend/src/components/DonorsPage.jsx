@@ -59,7 +59,7 @@ export default function DonorsPage() {
             <button className="primary" type="submit">Add donor</button>
           </div>
         </form>
-        {error && <p style={{ color: 'var(--primary)' }}>{error}</p>}
+        {error && <p className="error-banner" style={{ marginTop: 12 }}>{error}</p>}
       </div>
 
       <div className="card">
@@ -71,7 +71,7 @@ export default function DonorsPage() {
             </select>
           </label>
         </div>
-        <table>
+        <div className="table-wrap"><table>
           <thead>
             <tr><th>Name</th><th>Group</th><th>City</th><th>Phone</th><th>Last donated</th><th></th></tr>
           </thead>
@@ -87,7 +87,7 @@ export default function DonorsPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </>
   );
