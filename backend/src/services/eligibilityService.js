@@ -1,4 +1,4 @@
-const DONATION_COOLDOWN_DAYS = parseInt(process.env.DONATION_COOLDOWN_DAYS || '56', 10);
+const DEFAULT_COOLDOWN = parseInt(process.env.DONATION_COOLDOWN_DAYS || '56', 10);
 
 function daysSince(date) {
   if (!date) return Infinity;
@@ -6,21 +6,22 @@ function daysSince(date) {
   return ms / (1000 * 60 * 60 * 24);
 }
 
-function checkDonorEligibility(donor) {
+function checkDonorEligibility(donor, cooldownDays = DEFAULT_COOLDOWN) {
+  const cooldown = parseInt(cooldownDays, 10) || DEFAULT_COOLDOWN;
   const days = daysSince(donor.lastDonatedAt);
   if (!Number.isFinite(days) || days === Infinity) {
-    return { eligible: true, daysSinceLastDonation: null, daysUntilEligible: 0 };
+    return { eligible: true, daysSinceLastDonation: null, daysUntilEligible: 0, cooldownDays: cooldown };
   }
 
-  const eligible = days >= DONATION_COOLDOWN_DAYS;
-  const daysUntilEligible = eligible ? 0 : Math.ceil(DONATION_COOLDOWN_DAYS - days);
+  const eligible = days >= cooldown;
+  const daysUntilEligible = eligible ? 0 : Math.ceil(cooldown - days);
 
   return {
     eligible,
     daysSinceLastDonation: Math.floor(days),
     daysUntilEligible,
-    cooldownDays: DONATION_COOLDOWN_DAYS,
+    cooldownDays: cooldown,
   };
 }
 
-module.exports = { checkDonorEligibility, DONATION_COOLDOWN_DAYS };
+module.exports = { checkDonorEligibility, DEFAULT_COOLDOWN };

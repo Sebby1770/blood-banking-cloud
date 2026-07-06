@@ -25,12 +25,16 @@ const ROUTE_MODULES = [
   'routes/compatibility.js',
   'routes/search.js',
   'routes/export.js',
+  'routes/settings.js',
+  'routes/outreach.js',
 ];
 
 const REQUIRED_IN_APP = [
   '/api/alerts',
   '/api/compatibility',
-  "version: '0.3.0'",
+  "version: '0.4.0'",
+  '/api/settings',
+  '/api/outreach',
   '/api/search',
   '/api/export',
 ];
@@ -39,7 +43,7 @@ const REQUIRED_ROUTE_PATTERNS = {
   'routes/alerts.js': ["router.get('/'", "router.post('/:id/read'", "router.post('/read-all'"],
   'routes/compatibility.js': ["router.get('/'", "router.get('/:bloodGroup'"],
   'routes/analytics.js': ["router.get('/activity'", "router.get('/fulfillment'"],
-  'routes/requests.js': ["router.post('/:id/cancel'", "router.get('/:id/matches'"],
+  'routes/requests.js': ["router.get('/queue'", "router.post('/:id/cancel'", "router.get('/:id/matches'"],
   'routes/donors.js': ["router.get('/:id/eligibility'"],
   'routes/donations.js': ['checkDonorEligibility'],
   'routes/search.js': ["router.get('/'"],
@@ -80,4 +84,4 @@ if (failed) {
 
 console.log('Smoke test passed.');
 console.log(`  ${ROUTE_MODULES.length} route modules present`);
-console.log('  v0.3.0 API surface verified (search, export, deploy-ready)');
+console.log('  v0.4.0 API surface verified (settings, outreach, queue, reports)');

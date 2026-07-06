@@ -12,6 +12,7 @@ const ActivityLog = sequelize.define('ActivityLog', {
       'inventory_adjusted',
       'low_stock_alert',
       'donor_registered',
+      'settings_updated',
     ),
     allowNull: false,
   },

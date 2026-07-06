@@ -1,5 +1,6 @@
 require('dotenv').config();
-const { sequelize, Donor, Hospital, BloodInventory, Donation } = require('./models');
+const { sequelize, Donor, Hospital, BloodInventory, Donation, BloodRequest, Alert, ActivityLog, Settings } = require('./models');
+const { logActivity } = require('./services/activityService');
 
 const DONORS = [
   { name: 'Asha Patel', email: 'asha@example.com', phone: '+91-9000000001', bloodGroup: 'O+', city: 'Mumbai' },
@@ -35,10 +36,16 @@ const INVENTORY = [
     console.log('[seed] schema rebuilt');
 
     const donors = await Donor.bulkCreate(DONORS);
-    await Hospital.bulkCreate(HOSPITALS);
+    const hospitals = await Hospital.bulkCreate(HOSPITALS);
     await BloodInventory.bulkCreate(INVENTORY);
 
-    // A handful of historical donations across recent months for analytics.
+    await Settings.bulkCreate([
+      { key: 'lowStockThreshold', value: '5' },
+      { key: 'donationCooldownDays', value: '56' },
+      { key: 'organizationName', value: 'Blood Bank Cloud' },
+      { key: 'alertEmail', value: 'alerts@bloodbank.example' },
+    ]);
+
     const now = new Date();
     const past = (monthsAgo) => new Date(now.getFullYear(), now.getMonth() - monthsAgo, 15);
     const sample = [];
@@ -50,7 +57,23 @@ const INVENTORY = [
     });
     await Donation.bulkCreate(sample);
 
-    console.log(`[seed] ${donors.length} donors, ${HOSPITALS.length} hospitals, ${INVENTORY.length} inventory rows, ${sample.length} donations`);
+    await BloodRequest.bulkCreate([
+      { patientName: 'Raj Mehta', bloodGroup: 'O+', unitsNeeded: 2, urgency: 'critical', status: 'matched', hospitalId: hospitals[0].id },
+      { patientName: 'Sarah Chen', bloodGroup: 'A-', unitsNeeded: 1, urgency: 'high', status: 'open', hospitalId: hospitals[1].id },
+      { patientName: 'Omar Hassan', bloodGroup: 'B+', unitsNeeded: 3, urgency: 'medium', status: 'open', hospitalId: hospitals[2].id },
+      { patientName: 'Lisa Park', bloodGroup: 'AB-', unitsNeeded: 1, urgency: 'low', status: 'fulfilled', hospitalId: hospitals[0].id },
+    ]);
+
+    await Alert.bulkCreate([
+      { type: 'low_stock', subject: 'Low blood stock: AB-', message: 'AB- inventory at 1 unit. Threshold: 5.', bloodGroup: 'AB-', deliveredVia: 'console' },
+      { type: 'low_stock', subject: 'Low blood stock: B-', message: 'B- inventory at 2 units. Threshold: 5.', bloodGroup: 'B-', deliveredVia: 'console' },
+      { type: 'new_request', subject: 'New critical request for O+', message: 'Patient Raj Mehta needs 2 units of O+.', bloodGroup: 'O+', deliveredVia: 'console', read: true },
+    ]);
+
+    await logActivity('donor_registered', 'Blood Bank Cloud initialized with sample data');
+    await logActivity('request_created', 'Critical request for Raj Mehta (O+)', { requestId: 1 });
+
+    console.log(`[seed] ${donors.length} donors, ${hospitals.length} hospitals, ${INVENTORY.length} inventory rows, ${sample.length} donations, 4 requests, 3 alerts`);
     process.exit(0);
   } catch (err) {
     console.error('[seed] failed:', err);

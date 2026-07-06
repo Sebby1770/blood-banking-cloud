@@ -1,6 +1,7 @@
 const express = require('express');
 const { Donation, Donor, BloodInventory } = require('../models');
 const { checkDonorEligibility } = require('../services/eligibilityService');
+const { getSetting } = require('../services/settingsService');
 const { logActivity } = require('../services/activityService');
 const notify = require('../services/notificationService');
 
@@ -29,7 +30,8 @@ router.post('/', async (req, res, next) => {
     const donor = await Donor.findByPk(donorId);
     if (!donor) return res.status(404).json({ error: 'Donor not found' });
 
-    const eligibility = checkDonorEligibility(donor);
+    const cooldown = await getSetting('donationCooldownDays');
+    const eligibility = checkDonorEligibility(donor, cooldown);
     if (!eligibility.eligible) {
       return res.status(409).json({
         error: `Donor not eligible. Must wait ${eligibility.daysUntilEligible} more day(s).`,
@@ -60,7 +62,7 @@ router.post('/', async (req, res, next) => {
       { donorId, bloodGroup: donor.bloodGroup, units },
     );
 
-    res.status(201).json({ donation, inventory: inv, eligibility: checkDonorEligibility(donor) });
+    res.status(201).json({ donation, inventory: inv, eligibility: checkDonorEligibility(donor, cooldown) });
   } catch (err) {
     next(err);
   }

@@ -2,6 +2,24 @@
 
 All notable changes to Blood Banking Via Cloud Computing are documented in this file.
 
+## [0.4.0] - 2026-07-06
+
+### Added
+- **Settings page** — configure org name, alert email, low-stock threshold, and donation cooldown from the UI.
+- **Priority queue** — pending requests sorted by urgency with fulfill-ready indicators.
+- **Donor outreach** — find eligible donors for each low-stock blood group, filterable by city.
+- **Reports page** — city and blood-group charts, supply/demand forecast, fulfillment stats.
+- **Toast notifications** — non-blocking success/error feedback across actions.
+- **Dashboard quick actions** — one-click navigation to queue, outreach, requests, reports.
+- **Keyboard shortcut** — ⌘K / Ctrl+K focuses global search.
+- **Analytics** — donors-by-group, supply forecast, request queue API.
+- **Richer seed data** — sample requests, alerts, and default settings on first run.
+
+### Changed
+- Sidebar shows organization name from settings.
+- Emergency banner links directly to priority queue.
+- Favicon and meta tags for production deployment.
+
 ## [0.3.0] - 2026-07-06
 
 ### Added

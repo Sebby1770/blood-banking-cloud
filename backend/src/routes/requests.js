@@ -22,6 +22,33 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+const URGENCY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
+
+router.get('/queue', async (_req, res, next) => {
+  try {
+    const requests = await BloodRequest.findAll({
+      where: { status: { $in: ['open', 'matched'] } },
+      include: [{ model: Hospital, as: 'hospital' }],
+    });
+
+    const inventory = await BloodInventory.findAll();
+    const invMap = Object.fromEntries(inventory.map((r) => [r.bloodGroup, r.units]));
+
+    const queue = requests
+      .map((r) => ({
+        ...r.toJSON(),
+        canFulfill: (invMap[r.bloodGroup] || 0) >= r.unitsNeeded,
+        inventoryAvailable: invMap[r.bloodGroup] || 0,
+        priority: URGENCY_ORDER[r.urgency] ?? 9,
+      }))
+      .sort((a, b) => a.priority - b.priority || new Date(a.createdAt) - new Date(b.createdAt));
+
+    res.json(queue);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/:id/matches', async (req, res, next) => {
   try {
     const request = await BloodRequest.findByPk(req.params.id, {

@@ -110,6 +110,47 @@ router.get('/cities', async (_req, res, next) => {
   }
 });
 
+router.get('/donors-by-group', async (_req, res, next) => {
+  try {
+    const rows = await Donor.findAll({
+      attributes: ['bloodGroup', [fn('COUNT', col('id')), 'count']],
+      where: { available: true },
+      group: ['bloodGroup'],
+      order: [['bloodGroup', 'ASC']],
+      raw: true,
+    });
+    res.json(rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/forecast', async (_req, res, next) => {
+  try {
+    const [inventory, totalDonations, totalFulfilled] = await Promise.all([
+      BloodInventory.findAll(),
+      Donation.sum('units'),
+      BloodRequest.sum('unitsNeeded', { where: { status: 'fulfilled' } }),
+    ]);
+
+    const totalUnits = inventory.reduce((s, r) => s + r.units, 0);
+    const inflow = totalDonations || 0;
+    const outflow = totalFulfilled || 0;
+    const ratio = outflow > 0 ? (inflow / outflow).toFixed(2) : null;
+
+    res.json({
+      totalUnits,
+      allTimeDonations: inflow,
+      allTimeFulfilled: outflow,
+      supplyDemandRatio: ratio,
+      trend: inflow > outflow ? 'surplus' : inflow < outflow ? 'deficit' : 'balanced',
+      lowGroups: inventory.filter((r) => r.units < 5).map((r) => r.bloodGroup),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/fulfillment', async (_req, res, next) => {
   try {
     const [total, fulfilled, cancelled, matched, open] = await Promise.all([

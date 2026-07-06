@@ -12,7 +12,7 @@ const TYPE_LABELS = {
   donor_registered: 'New donor',
 };
 
-export default function Dashboard() {
+export default function Dashboard({ onNavigate }) {
   const fetchAll = useCallback(
     () => Promise.all([
       api.analytics.summary(),
@@ -49,7 +49,21 @@ export default function Dashboard() {
 
       {criticalCount > 0 && (
         <div className="emergency-banner">
-          <strong>{criticalCount} critical request(s)</strong> need immediate attention — check the Requests page.
+          <strong>{criticalCount} critical request(s)</strong> need immediate attention.
+          {onNavigate && (
+            <button className="ghost sm" style={{ marginLeft: 12 }} onClick={() => onNavigate('queue')}>
+              Open priority queue →
+            </button>
+          )}
+        </div>
+      )}
+
+      {onNavigate && (
+        <div className="quick-actions">
+          <button className="quick-action" onClick={() => onNavigate('queue')}>⚡ Priority queue</button>
+          <button className="quick-action" onClick={() => onNavigate('outreach')}>📞 Donor outreach</button>
+          <button className="quick-action" onClick={() => onNavigate('requests')}>🆘 New request</button>
+          <button className="quick-action" onClick={() => onNavigate('reports')}>📈 Reports</button>
         </div>
       )}
 

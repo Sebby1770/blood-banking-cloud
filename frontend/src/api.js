@@ -37,6 +37,7 @@ export const api = {
       const q = new URLSearchParams(params).toString();
       return request('/requests' + (q ? `?${q}` : ''));
     },
+    queue: () => request('/requests/queue'),
     create: (data) => request('/requests', { method: 'POST', body: JSON.stringify(data) }),
     fulfill: (id) => request(`/requests/${id}/fulfill`, { method: 'POST' }),
     cancel: (id) => request(`/requests/${id}/cancel`, { method: 'POST' }),
@@ -56,6 +57,18 @@ export const api = {
     fulfillment: () => request('/analytics/fulfillment'),
     urgency: () => request('/analytics/urgency'),
     cities: () => request('/analytics/cities'),
+    donorsByGroup: () => request('/analytics/donors-by-group'),
+    forecast: () => request('/analytics/forecast'),
+  },
+  settings: {
+    get: () => request('/settings'),
+    update: (data) => request('/settings', { method: 'PATCH', body: JSON.stringify(data) }),
+  },
+  outreach: {
+    list: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request('/outreach' + (q ? `?${q}` : ''));
+    },
   },
   alerts: {
     list: (params = {}) => {
