@@ -54,15 +54,19 @@ export const api = {
     trends: () => request('/analytics/trends'),
     activity: (limit = 30) => request(`/analytics/activity?limit=${limit}`),
     fulfillment: () => request('/analytics/fulfillment'),
+    urgency: () => request('/analytics/urgency'),
+    cities: () => request('/analytics/cities'),
   },
   alerts: {
     list: (params = {}) => {
       const q = new URLSearchParams(params).toString();
       return request('/alerts' + (q ? `?${q}` : ''));
     },
+    count: () => request('/alerts/count'),
     markRead: (id) => request(`/alerts/${id}/read`, { method: 'POST' }),
     markAllRead: () => request('/alerts/read-all', { method: 'POST' }),
   },
+  search: (q) => request(`/search?q=${encodeURIComponent(q)}`),
   compatibility: {
     matrix: () => request('/compatibility'),
     forGroup: (group) => request(`/compatibility/${encodeURIComponent(group)}`),

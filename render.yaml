@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: blood-banking-cloud
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: DATABASE_URL
+        value: sqlite:./data/blood_bank.sqlite
+      - key: LOW_STOCK_THRESHOLD
+        value: 5
+      - key: DONATION_COOLDOWN_DAYS
+        value: 56
+    disk:
+      name: blood-bank-data
+      mountPath: /app/backend/data
+      sizeGB: 1

@@ -82,6 +82,34 @@ router.get('/activity', async (req, res, next) => {
   }
 });
 
+router.get('/urgency', async (_req, res, next) => {
+  try {
+    const rows = await BloodRequest.findAll({
+      attributes: ['urgency', [fn('COUNT', col('id')), 'count']],
+      where: { status: { $in: ['open', 'matched'] } },
+      group: ['urgency'],
+      raw: true,
+    });
+    res.json(rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/cities', async (_req, res, next) => {
+  try {
+    const donors = await Donor.findAll({
+      attributes: ['city', [fn('COUNT', col('id')), 'donors']],
+      group: ['city'],
+      order: [[literal('donors'), 'DESC']],
+      raw: true,
+    });
+    res.json(donors);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/fulfillment', async (_req, res, next) => {
   try {
     const [total, fulfilled, cancelled, matched, open] = await Promise.all([

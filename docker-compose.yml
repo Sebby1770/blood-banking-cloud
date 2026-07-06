@@ -1,0 +1,17 @@
+services:
+  blood-bank:
+    build: .
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: sqlite:./data/blood_bank.sqlite
+      LOW_STOCK_THRESHOLD: 5
+      DONATION_COOLDOWN_DAYS: 56
+    volumes:
+      - blood-bank-data:/app/backend/data
+    restart: unless-stopped
+
+volumes:
+  blood-bank-data:

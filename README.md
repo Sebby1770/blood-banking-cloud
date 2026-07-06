@@ -131,6 +131,21 @@ npm run dev        # starts UI on http://localhost:5173
 
 Open <http://localhost:5173> — the dashboard will hit the local API.
 
+### 3. Deploy as a live website
+
+See **[DEPLOY.md](DEPLOY.md)** for full instructions. Quickest options:
+
+```bash
+# Docker — one command, opens on http://localhost:4000
+docker compose up --build -d
+
+# Or production mode locally
+npm run install:all && npm run build && npm start
+# → http://localhost:4000
+
+# Free public URL via Render.com — connect GitHub repo, apply render.yaml blueprint
+```
+
 ---
 
 ## API Overview

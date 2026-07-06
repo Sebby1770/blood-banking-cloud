@@ -1,4 +1,4 @@
-.PHONY: install seed dev backend frontend smoke build
+.PHONY: install seed dev backend frontend smoke build start docker-up docker-down deploy-local
 
 install:
 	cd backend && npm install
@@ -23,3 +23,15 @@ smoke:
 
 build:
 	cd frontend && npm run build
+
+start: build
+	cd backend && NODE_ENV=production node server.js
+
+deploy-local: build seed
+	cd backend && NODE_ENV=production node server.js
+
+docker-up:
+	docker compose up --build -d
+
+docker-down:
+	docker compose down

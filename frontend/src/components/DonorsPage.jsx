@@ -75,6 +75,10 @@ export default function DonorsPage() {
       </div>
 
       <div className="card">
+        <div className="card-header">
+          <h3>Donor registry</h3>
+          <a className="export-link" href="/api/export/donors.csv" download>Export CSV</a>
+        </div>
         <div className="row" style={{ marginBottom: 12 }}>
           <label>Filter by group
             <select value={filter} onChange={(e) => setFilter(e.target.value)}>

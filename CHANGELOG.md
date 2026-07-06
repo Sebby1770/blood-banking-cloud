@@ -2,39 +2,33 @@
 
 All notable changes to Blood Banking Via Cloud Computing are documented in this file.
 
+## [0.3.0] - 2026-07-06
+
+### Added
+- **Production single-server mode** — Express serves the built React app; one URL for frontend + API.
+- **Docker + docker-compose** — `docker compose up --build` runs the full site on port 4000.
+- **Render.com blueprint** (`render.yaml`) — one-click free cloud deploy with persistent disk.
+- **DEPLOY.md** — step-by-step deploy guide (Docker, Render, Cloudflare Tunnel, AWS).
+- **Global search** — `GET /api/search?q=` across donors and requests; search bar in sidebar.
+- **CSV export** — download donors, inventory, donations, and requests as CSV.
+- **Live dashboard** — auto-refreshes every 30 seconds with "Live" indicator.
+- **Emergency banner** — highlights critical blood requests on the dashboard.
+- **Unread alert badge** — notification count in sidebar navigation.
+- **Urgency analytics** — pending request breakdown by urgency level.
+- **City analytics** — donor counts grouped by city.
+
+### Changed
+- Root `package.json` with unified `build`, `start`, and `deploy:local` scripts.
+- Health endpoint reports v0.3.0.
+- Dockerfile with smart entrypoint (seeds DB only on first run).
+
 ## [0.2.0] - 2026-07-06
 
 ### Added
-- **Activity log** — persistent audit trail for donations, requests, inventory changes, and donor registrations.
-- **Alert history** — low-stock and new-request notifications saved to the database with read/unread state.
-- **Donor eligibility** — 56-day donation cooldown enforced server-side with per-donor eligibility status.
-- **Blood compatibility API** — `GET /api/compatibility` matrix and per-group lookup.
-- **Expanded analytics** — activity feed, fulfillment rate, inventory breakdown by blood group.
-- **Request lifecycle** — cancel endpoint, match preview endpoint, improved fulfill validation.
-- **Frontend pages** — Donations, Hospitals, Alerts, Compatibility.
-- **Dark mode** — theme toggle with system preference detection and localStorage persistence.
-- **Dashboard charts** — inventory bar chart, activity feed, fulfillment KPI.
-- **CI workflow** — GitHub Actions smoke test on push.
-- **Makefile** — `make dev`, `make seed`, `make smoke` shortcuts.
-
-### Changed
-- Inventory API returns status (`low` / `moderate` / `healthy`) and threshold per row.
-- Donors list includes eligibility info; donation button disabled when in cooldown.
-- Requests page supports status filtering and cancel action.
-- Health endpoint returns version and timestamp.
-- Notification service persists all alerts to the database.
-- README updated with new API routes and features.
-
-### Fixed
-- Donor eligibility route ordering (specific routes before `/:id`).
-- Analytics pending-request count now includes both `open` and `matched` statuses.
+- Activity log, alert history, donor eligibility, blood compatibility API.
+- Dark mode, 8-page dashboard, GitHub Actions CI.
 
 ## [1.0.0] - 2025-05-02
 
 ### Added
 - Initial release with Express API, SQLite database, React dashboard.
-- Donor, hospital, inventory, request, and donation management.
-- Auto donor matching by blood compatibility and city.
-- Low-stock SNS notifications (console stub locally).
-- Donation trend analytics.
-- AWS CloudFormation deployment templates.

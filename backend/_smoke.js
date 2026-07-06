@@ -23,12 +23,16 @@ const ROUTE_MODULES = [
   'routes/analytics.js',
   'routes/alerts.js',
   'routes/compatibility.js',
+  'routes/search.js',
+  'routes/export.js',
 ];
 
 const REQUIRED_IN_APP = [
   '/api/alerts',
   '/api/compatibility',
-  "version: '0.2.0'",
+  "version: '0.3.0'",
+  '/api/search',
+  '/api/export',
 ];
 
 const REQUIRED_ROUTE_PATTERNS = {
@@ -38,6 +42,8 @@ const REQUIRED_ROUTE_PATTERNS = {
   'routes/requests.js': ["router.post('/:id/cancel'", "router.get('/:id/matches'"],
   'routes/donors.js': ["router.get('/:id/eligibility'"],
   'routes/donations.js': ['checkDonorEligibility'],
+  'routes/search.js': ["router.get('/'"],
+  'routes/export.js': ['donors.csv', 'inventory.csv'],
 };
 
 let failed = false;
@@ -74,4 +80,4 @@ if (failed) {
 
 console.log('Smoke test passed.');
 console.log(`  ${ROUTE_MODULES.length} route modules present`);
-console.log('  v0.2.0 API surface verified (alerts, compatibility, activity, eligibility, cancel)');
+console.log('  v0.3.0 API surface verified (search, export, deploy-ready)');

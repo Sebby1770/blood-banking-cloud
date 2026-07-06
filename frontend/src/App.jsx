@@ -7,6 +7,7 @@ import DonationsPage from './components/DonationsPage.jsx';
 import HospitalsPage from './components/HospitalsPage.jsx';
 import AlertsPage from './components/AlertsPage.jsx';
 import CompatibilityPage from './components/CompatibilityPage.jsx';
+import SearchBar from './components/SearchBar.jsx';
 import { useTheme } from './hooks/useTheme.js';
 import { api } from './api.js';
 
@@ -24,20 +25,27 @@ const PAGES = [
 export default function App() {
   const [page, setPage] = useState('dashboard');
   const [health, setHealth] = useState(null);
+  const [unreadAlerts, setUnreadAlerts] = useState(0);
   const { dark, toggle } = useTheme();
   const ActiveComponent = PAGES.find((p) => p.id === page).component;
 
   useEffect(() => {
     api.health().then(setHealth).catch(() => setHealth({ status: 'offline' }));
-  }, []);
+    api.alerts.count().then((c) => setUnreadAlerts(c.unread)).catch(() => {});
+    const id = setInterval(() => {
+      api.alerts.count().then((c) => setUnreadAlerts(c.unread)).catch(() => {});
+    }, 30000);
+    return () => clearInterval(id);
+  }, [page]);
 
   return (
     <div className="layout">
       <aside className="sidebar">
         <div className="brand">
           <h1>Blood Bank Cloud</h1>
-          <span className="version">v0.2.0</span>
+          <span className="version">v0.3.0</span>
         </div>
+        <SearchBar onNavigate={setPage} />
         <nav>
           {PAGES.map((p) => (
             <button
@@ -47,6 +55,9 @@ export default function App() {
             >
               <span className="nav-icon">{p.icon}</span>
               {p.label}
+              {p.id === 'alerts' && unreadAlerts > 0 && (
+                <span className="nav-badge">{unreadAlerts}</span>
+              )}
             </button>
           ))}
         </nav>

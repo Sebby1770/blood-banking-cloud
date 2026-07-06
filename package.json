@@ -1,0 +1,16 @@
+{
+  "name": "blood-banking-cloud",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Blood Banking Via Cloud Computing — full-stack platform",
+  "scripts": {
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "seed": "cd backend && npm run seed",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && NODE_ENV=production node server.js",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "smoke": "cd backend && node _smoke.js",
+    "deploy:local": "npm run build && npm run seed && npm start"
+  }
+}
