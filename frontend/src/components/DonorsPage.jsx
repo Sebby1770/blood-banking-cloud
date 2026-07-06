@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
+import DonorDetailModal from './DonorDetailModal.jsx';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 const EMPTY = { name: '', email: '', phone: '', bloodGroup: 'O+', city: '' };
 
-export default function DonorsPage() {
+export default function DonorsPage({ onToast }) {
   const [donors, setDonors] = useState([]);
   const [filter, setFilter] = useState('');
   const [cityFilter, setCityFilter] = useState('');
   const [form, setForm] = useState(EMPTY);
   const [error, setError] = useState(null);
-  const [message, setMessage] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [history, setHistory] = useState(null);
 
   const load = () => {
     const params = {};
@@ -27,27 +29,51 @@ export default function DonorsPage() {
     try {
       await api.donors.create(form);
       setForm(EMPTY);
-      setMessage('Donor registered successfully.');
+      onToast?.('Donor registered', 'success');
       load();
     } catch (err) {
       setError(err.message);
     }
   };
 
+  const viewDonor = async (donor) => {
+    const data = await api.donors.history(donor.id);
+    setSelected(data.donor);
+    setHistory(data);
+  };
+
   const recordDonation = async (donor) => {
-    setError(null);
-    setMessage(null);
     if (donor.eligibility && !donor.eligibility.eligible) {
-      setError(`Not eligible — wait ${donor.eligibility.daysUntilEligible} more day(s).`);
+      onToast?.(`Wait ${donor.eligibility.daysUntilEligible} more day(s)`, 'error');
       return;
     }
     try {
       await api.donations.create({ donorId: donor.id, units: 1 });
-      setMessage(`Donation recorded for ${donor.name}.`);
+      onToast?.(`Donation recorded for ${donor.name}`, 'success');
+      setSelected(null);
       load();
     } catch (err) {
-      setError(err.message);
+      onToast?.(err.message, 'error');
     }
+  };
+
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    const lines = text.trim().split('\n').slice(1);
+    const rows = lines.map((line) => {
+      const [name, email, phone, bloodGroup, city] = line.split(',').map((s) => s.trim().replace(/^"|"$/g, ''));
+      return { name, email, phone, bloodGroup, city };
+    }).filter((r) => r.name && r.email);
+    try {
+      const result = await api.donors.import(rows);
+      onToast?.(`Imported ${result.imported} donor(s)${result.errors ? `, ${result.errors} failed` : ''}`, 'success');
+      load();
+    } catch (err) {
+      onToast?.(err.message, 'error');
+    }
+    e.target.value = '';
   };
 
   return (
@@ -71,13 +97,18 @@ export default function DonorsPage() {
           </div>
         </form>
         {error && <p className="error-text">{error}</p>}
-        {message && <p className="success-text">{message}</p>}
       </div>
 
       <div className="card">
         <div className="card-header">
-          <h3>Donor registry</h3>
-          <a className="export-link" href="/api/export/donors.csv" download>Export CSV</a>
+          <h3>Donor registry ({donors.length})</h3>
+          <div className="header-actions">
+            <label className="import-btn">
+              Import CSV
+              <input type="file" accept=".csv" onChange={handleImport} hidden />
+            </label>
+            <a className="export-link" href="/api/export/donors.csv" download>Export CSV</a>
+          </div>
         </div>
         <div className="row" style={{ marginBottom: 12 }}>
           <label>Filter by group
@@ -97,7 +128,7 @@ export default function DonorsPage() {
           <tbody>
             {donors.map((d) => (
               <tr key={d.id}>
-                <td>{d.name}</td>
+                <td><button className="link-btn" onClick={() => viewDonor(d)}>{d.name}</button></td>
                 <td><span className="badge ok">{d.bloodGroup}</span></td>
                 <td>{d.city}</td>
                 <td>{d.lastDonatedAt ? new Date(d.lastDonatedAt).toLocaleDateString() : '—'}</td>
@@ -107,12 +138,8 @@ export default function DonorsPage() {
                     : <span className="badge warn">Wait {d.eligibility?.daysUntilEligible}d</span>}
                 </td>
                 <td>
-                  <button
-                    className="primary"
-                    disabled={d.eligibility && !d.eligibility.eligible}
-                    onClick={() => recordDonation(d)}
-                  >
-                    Record donation
+                  <button className="primary sm" disabled={d.eligibility && !d.eligibility.eligible} onClick={() => recordDonation(d)}>
+                    Donate
                   </button>
                 </td>
               </tr>
@@ -120,6 +147,13 @@ export default function DonorsPage() {
           </tbody>
         </table>
       </div>
+
+      <DonorDetailModal
+        donor={selected}
+        history={history}
+        onClose={() => { setSelected(null); setHistory(null); }}
+        onRecordDonation={recordDonation}
+      />
     </>
   );
 }

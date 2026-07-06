@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { sequelize, Donor, Hospital, BloodInventory, Donation, BloodRequest, Alert, ActivityLog, Settings } = require('./models');
+const { sequelize, Donor, Hospital, BloodInventory, Donation, BloodRequest, Alert, ActivityLog, Settings, Campaign } = require('./models');
 const { logActivity } = require('./services/activityService');
 
 const DONORS = [
@@ -68,6 +68,13 @@ const INVENTORY = [
       { type: 'low_stock', subject: 'Low blood stock: AB-', message: 'AB- inventory at 1 unit. Threshold: 5.', bloodGroup: 'AB-', deliveredVia: 'console' },
       { type: 'low_stock', subject: 'Low blood stock: B-', message: 'B- inventory at 2 units. Threshold: 5.', bloodGroup: 'B-', deliveredVia: 'console' },
       { type: 'new_request', subject: 'New critical request for O+', message: 'Patient Raj Mehta needs 2 units of O+.', bloodGroup: 'O+', deliveredVia: 'console', read: true },
+    ]);
+
+    const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const nextMonth = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    await Campaign.bulkCreate([
+      { name: 'Mumbai O+ Drive', city: 'Mumbai', bloodGroup: 'O+', targetUnits: 20, scheduledAt: nextWeek, status: 'planned' },
+      { name: 'NYC Universal Drive', city: 'New York', bloodGroup: 'any', targetUnits: 30, scheduledAt: nextMonth, status: 'planned' },
     ]);
 
     await logActivity('donor_registered', 'Blood Bank Cloud initialized with sample data');

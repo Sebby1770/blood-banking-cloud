@@ -2,6 +2,21 @@
 
 All notable changes to Blood Banking Via Cloud Computing are documented in this file.
 
+## [0.5.0] - 2026-07-06
+
+### Added
+- **Blood drive campaigns** — schedule, activate, complete, and cancel community donation drives.
+- **Donor portal** — public self-registration page for new donors.
+- **Donor profiles** — click any donor to view full history and lifetime stats in a modal.
+- **Bulk CSV import** — upload a CSV to register multiple donors at once.
+- **API docs page** — browsable in-app reference for all REST endpoints.
+- **Grouped navigation** — sidebar organized into Operations, Registry, Insights, System.
+- **Mobile sidebar** — hamburger menu with slide-out nav on small screens.
+
+### Changed
+- Donors page links to profile modal; import/export actions in header.
+- Seed data includes sample blood drive campaigns.
+
 ## [0.4.0] - 2026-07-06
 
 ### Added

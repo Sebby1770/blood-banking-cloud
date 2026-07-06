@@ -22,7 +22,19 @@ export const api = {
     },
     create: (data) => request('/donors', { method: 'POST', body: JSON.stringify(data) }),
     eligibility: (id) => request(`/donors/${id}/eligibility`),
+    history: (id) => request(`/donors/${id}/history`),
+    import: (rows) => request('/donors/import', { method: 'POST', body: JSON.stringify({ rows }) }),
   },
+  campaigns: {
+    list: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request('/campaigns' + (q ? `?${q}` : ''));
+    },
+    create: (data) => request('/campaigns', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id, data) => request(`/campaigns/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id) => request(`/campaigns/${id}`, { method: 'DELETE' }),
+  },
+  docs: () => request('/docs'),
   hospitals: {
     list: () => request('/hospitals'),
     create: (data) => request('/hospitals', { method: 'POST', body: JSON.stringify(data) }),

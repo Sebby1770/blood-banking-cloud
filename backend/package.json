@@ -1,6 +1,6 @@
 {
   "name": "blood-banking-backend",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Express API for the Blood Banking Via Cloud Computing project",
   "main": "server.js",
   "type": "commonjs",

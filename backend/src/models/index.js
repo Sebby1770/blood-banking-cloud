@@ -7,6 +7,7 @@ const Donation = require('./Donation');
 const ActivityLog = require('./ActivityLog');
 const Alert = require('./Alert');
 const Settings = require('./Settings');
+const Campaign = require('./Campaign');
 
 // Associations
 Hospital.hasMany(BloodRequest, { foreignKey: 'hospitalId', as: 'requests' });
@@ -25,4 +26,5 @@ module.exports = {
   ActivityLog,
   Alert,
   Settings,
+  Campaign,
 };

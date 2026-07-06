@@ -15,6 +15,8 @@ const search = require('./routes/search');
 const exportRoutes = require('./routes/export');
 const settings = require('./routes/settings');
 const outreach = require('./routes/outreach');
+const campaigns = require('./routes/campaigns');
+const docs = require('./routes/docs');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -28,7 +30,7 @@ app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
     service: 'blood-banking-api',
-    version: '0.4.0',
+    version: '0.5.0',
     timestamp: new Date().toISOString(),
   });
 });
@@ -45,6 +47,8 @@ app.use('/api/search', search);
 app.use('/api/export', exportRoutes);
 app.use('/api/settings', settings);
 app.use('/api/outreach', outreach);
+app.use('/api/campaigns', campaigns);
+app.use('/api/docs', docs);
 
 // Serve built React app in production (single-server deploy)
 if (isProd) {

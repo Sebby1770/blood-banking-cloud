@@ -1,5 +1,5 @@
 const express = require('express');
-const { Donor } = require('../models');
+const { Donor, Donation } = require('../models');
 const { checkDonorEligibility } = require('../services/eligibilityService');
 const { logActivity } = require('../services/activityService');
 
@@ -14,6 +14,50 @@ router.get('/', async (req, res, next) => {
     if (req.query.available) where.available = req.query.available === 'true';
     const donors = await Donor.findAll({ where, order: [['name', 'ASC']] });
     res.json(donors.map((d) => ({ ...d.toJSON(), eligibility: checkDonorEligibility(d) })));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/import', async (req, res, next) => {
+  try {
+    const { rows } = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({ error: 'rows array required' });
+    }
+    const created = [];
+    const errors = [];
+    for (const row of rows) {
+      try {
+        const donor = await Donor.create(row);
+        created.push(donor);
+      } catch (err) {
+        errors.push({ row, error: err.message });
+      }
+    }
+    if (created.length > 0) {
+      await logActivity('donor_registered', `Bulk import: ${created.length} donor(s) added`);
+    }
+    res.status(201).json({ imported: created.length, errors: errors.length, donors: created, failed: errors });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/:id/history', async (req, res, next) => {
+  try {
+    const donor = await Donor.findByPk(req.params.id);
+    if (!donor) return res.status(404).json({ error: 'Donor not found' });
+    const donations = await Donation.findAll({
+      where: { donorId: donor.id },
+      order: [['donatedAt', 'DESC']],
+    });
+    const totalUnits = donations.reduce((s, d) => s + d.units, 0);
+    res.json({
+      donor: { ...donor.toJSON(), eligibility: checkDonorEligibility(donor) },
+      donations,
+      stats: { totalDonations: donations.length, totalUnits },
+    });
   } catch (err) {
     next(err);
   }
