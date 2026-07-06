@@ -9,11 +9,15 @@ This repo is a **working starter app** built with **Node.js + Express + SQLite**
 ## Features
 
 - Track blood availability in real-time (by blood group and component)
-- Match donors with recipient requests quickly
+- Match donors with recipient requests quickly (blood compatibility + city)
+- **Donor eligibility** — enforces configurable donation cooldown (default 56 days)
+- **Activity log** — audit trail for donations, requests, inventory, and registrations
+- **Alert history** — persisted low-stock and new-request notifications with read/unread state
+- **Blood compatibility matrix** — API and UI for recipient → donor matching rules
 - Send alerts when inventory drops below a configurable threshold
 - REST API accessible from anywhere (web, mobile, third-party integrations)
-- Donation-trend analytics endpoint (donations per month per blood group)
-- React dashboard for hospitals/admins
+- Analytics: donation trends, fulfillment rate, inventory breakdown, activity feed
+- React dashboard with dark mode, 8 pages, and inventory bar charts
 - Optional AWS deployment (EC2 + RDS + S3 + SNS + Lambda)
 
 ---
@@ -145,8 +149,19 @@ Open <http://localhost:5173> — the dashboard will hit the local API.
 | GET    | `/api/donations`              | List donations                                |
 | POST   | `/api/donations`              | Record a donation (increments inventory)      |
 | GET    | `/api/analytics/trends`       | Monthly donation trends by blood group        |
+| GET    | `/api/analytics/summary`      | Dashboard KPIs and inventory breakdown          |
+| GET    | `/api/analytics/activity`     | Recent activity log entries                     |
+| GET    | `/api/analytics/fulfillment`  | Request fulfillment statistics                  |
+| GET    | `/api/alerts`                 | Alert history (filter `?unread=true`)           |
+| POST   | `/api/alerts/:id/read`        | Mark alert as read                              |
+| POST   | `/api/alerts/read-all`        | Mark all alerts as read                         |
+| GET    | `/api/compatibility`          | Full blood compatibility matrix                 |
+| GET    | `/api/compatibility/:group`   | Compatible donors for a recipient group         |
+| GET    | `/api/donors/:id/eligibility` | Donor donation eligibility status               |
+| GET    | `/api/requests/:id/matches`   | Preview matched donors for a request            |
+| POST   | `/api/requests/:id/cancel`    | Cancel a pending request                        |
 
-Full details in [`docs/api.md`](docs/api.md).
+Full details in [`docs/api.md`](docs/api.md). See [`CHANGELOG.md`](CHANGELOG.md) for version history.
 
 ---
 

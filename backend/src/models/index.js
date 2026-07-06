@@ -4,6 +4,8 @@ const Hospital = require('./Hospital');
 const BloodInventory = require('./BloodInventory');
 const BloodRequest = require('./BloodRequest');
 const Donation = require('./Donation');
+const ActivityLog = require('./ActivityLog');
+const Alert = require('./Alert');
 
 // Associations
 Hospital.hasMany(BloodRequest, { foreignKey: 'hospitalId', as: 'requests' });
@@ -19,4 +21,6 @@ module.exports = {
   BloodInventory,
   BloodRequest,
   Donation,
+  ActivityLog,
+  Alert,
 };

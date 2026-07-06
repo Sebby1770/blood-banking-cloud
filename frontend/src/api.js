@@ -1,4 +1,3 @@
-// Tiny fetch wrapper. The Vite dev server proxies /api → http://localhost:4000.
 const BASE = '/api';
 
 async function request(path, opts = {}) {
@@ -22,6 +21,7 @@ export const api = {
       return request('/donors' + (q ? `?${q}` : ''));
     },
     create: (data) => request('/donors', { method: 'POST', body: JSON.stringify(data) }),
+    eligibility: (id) => request(`/donors/${id}/eligibility`),
   },
   hospitals: {
     list: () => request('/hospitals'),
@@ -33,16 +33,38 @@ export const api = {
       request('/inventory/adjust', { method: 'POST', body: JSON.stringify({ bloodGroup, delta }) }),
   },
   requests: {
-    list: () => request('/requests'),
+    list: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request('/requests' + (q ? `?${q}` : ''));
+    },
     create: (data) => request('/requests', { method: 'POST', body: JSON.stringify(data) }),
     fulfill: (id) => request(`/requests/${id}/fulfill`, { method: 'POST' }),
+    cancel: (id) => request(`/requests/${id}/cancel`, { method: 'POST' }),
+    matches: (id) => request(`/requests/${id}/matches`),
   },
   donations: {
-    list: () => request('/donations'),
+    list: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request('/donations' + (q ? `?${q}` : ''));
+    },
     create: (data) => request('/donations', { method: 'POST', body: JSON.stringify(data) }),
   },
   analytics: {
     summary: () => request('/analytics/summary'),
     trends: () => request('/analytics/trends'),
+    activity: (limit = 30) => request(`/analytics/activity?limit=${limit}`),
+    fulfillment: () => request('/analytics/fulfillment'),
+  },
+  alerts: {
+    list: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request('/alerts' + (q ? `?${q}` : ''));
+    },
+    markRead: (id) => request(`/alerts/${id}/read`, { method: 'POST' }),
+    markAllRead: () => request('/alerts/read-all', { method: 'POST' }),
+  },
+  compatibility: {
+    matrix: () => request('/compatibility'),
+    forGroup: (group) => request(`/compatibility/${encodeURIComponent(group)}`),
   },
 };

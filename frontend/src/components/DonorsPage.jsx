@@ -2,17 +2,24 @@ import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-
 const EMPTY = { name: '', email: '', phone: '', bloodGroup: 'O+', city: '' };
 
 export default function DonorsPage() {
   const [donors, setDonors] = useState([]);
   const [filter, setFilter] = useState('');
+  const [cityFilter, setCityFilter] = useState('');
   const [form, setForm] = useState(EMPTY);
   const [error, setError] = useState(null);
+  const [message, setMessage] = useState(null);
 
-  const load = () => api.donors.list().then(setDonors).catch((e) => setError(e.message));
-  useEffect(() => { load(); }, []);
+  const load = () => {
+    const params = {};
+    if (filter) params.bloodGroup = filter;
+    if (cityFilter) params.city = cityFilter;
+    return api.donors.list(params).then(setDonors).catch((e) => setError(e.message));
+  };
+
+  useEffect(() => { load(); }, [filter, cityFilter]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -20,24 +27,28 @@ export default function DonorsPage() {
     try {
       await api.donors.create(form);
       setForm(EMPTY);
+      setMessage('Donor registered successfully.');
       load();
     } catch (err) {
       setError(err.message);
     }
   };
 
-  const recordDonation = async (donorId) => {
+  const recordDonation = async (donor) => {
+    setError(null);
+    setMessage(null);
+    if (donor.eligibility && !donor.eligibility.eligible) {
+      setError(`Not eligible — wait ${donor.eligibility.daysUntilEligible} more day(s).`);
+      return;
+    }
     try {
-      await api.donations.create({ donorId, units: 1 });
+      await api.donations.create({ donorId: donor.id, units: 1 });
+      setMessage(`Donation recorded for ${donor.name}.`);
       load();
     } catch (err) {
       setError(err.message);
     }
   };
-
-  const filtered = donors.filter((d) =>
-    !filter || d.bloodGroup === filter
-  );
 
   return (
     <>
@@ -59,7 +70,8 @@ export default function DonorsPage() {
             <button className="primary" type="submit">Add donor</button>
           </div>
         </form>
-        {error && <p style={{ color: 'var(--primary)' }}>{error}</p>}
+        {error && <p className="error-text">{error}</p>}
+        {message && <p className="success-text">{message}</p>}
       </div>
 
       <div className="card">
@@ -70,20 +82,35 @@ export default function DonorsPage() {
               {BLOOD_GROUPS.map((g) => <option key={g}>{g}</option>)}
             </select>
           </label>
+          <label>Filter by city
+            <input value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} placeholder="e.g. Mumbai" />
+          </label>
         </div>
         <table>
           <thead>
-            <tr><th>Name</th><th>Group</th><th>City</th><th>Phone</th><th>Last donated</th><th></th></tr>
+            <tr><th>Name</th><th>Group</th><th>City</th><th>Last donated</th><th>Eligible</th><th></th></tr>
           </thead>
           <tbody>
-            {filtered.map((d) => (
+            {donors.map((d) => (
               <tr key={d.id}>
                 <td>{d.name}</td>
                 <td><span className="badge ok">{d.bloodGroup}</span></td>
                 <td>{d.city}</td>
-                <td>{d.phone}</td>
                 <td>{d.lastDonatedAt ? new Date(d.lastDonatedAt).toLocaleDateString() : '—'}</td>
-                <td><button className="primary" onClick={() => recordDonation(d.id)}>Record donation</button></td>
+                <td>
+                  {d.eligibility?.eligible
+                    ? <span className="badge ok">Yes</span>
+                    : <span className="badge warn">Wait {d.eligibility?.daysUntilEligible}d</span>}
+                </td>
+                <td>
+                  <button
+                    className="primary"
+                    disabled={d.eligibility && !d.eligibility.eligible}
+                    onClick={() => recordDonation(d)}
+                  >
+                    Record donation
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

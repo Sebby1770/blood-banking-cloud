@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 
-const THRESHOLD = 5;
-
 export default function InventoryPage() {
   const [rows, setRows] = useState([]);
   const [error, setError] = useState(null);
@@ -19,34 +17,36 @@ export default function InventoryPage() {
     }
   };
 
+  const total = rows.reduce((sum, r) => sum + r.units, 0);
+
   return (
     <>
       <h2>Inventory</h2>
-      {error && <div className="card" style={{ color: 'var(--primary)' }}>{error}</div>}
+      <p className="subtitle">{total} total units across {rows.length} blood groups</p>
+      {error && <div className="card error-text">{error}</div>}
       <div className="card">
         <table>
           <thead>
-            <tr><th>Blood group</th><th>Units</th><th>Status</th><th>Adjust</th></tr>
+            <tr><th>Blood group</th><th>Units</th><th>Status</th><th>Threshold</th><th>Adjust</th></tr>
           </thead>
           <tbody>
-            {rows.map((r) => {
-              const low = r.units < THRESHOLD;
-              return (
-                <tr key={r.id}>
-                  <td><strong>{r.bloodGroup}</strong></td>
-                  <td>{r.units}</td>
-                  <td>
-                    {low
-                      ? <span className="badge low">Low</span>
-                      : <span className="badge ok">OK</span>}
-                  </td>
-                  <td>
-                    <button className="primary" style={{ marginRight: 6 }} onClick={() => adjust(r.bloodGroup, +1)}>+1</button>
-                    <button className="primary" onClick={() => adjust(r.bloodGroup, -1)}>−1</button>
-                  </td>
-                </tr>
-              );
-            })}
+            {rows.map((r) => (
+              <tr key={r.id}>
+                <td><strong>{r.bloodGroup}</strong></td>
+                <td>{r.units}</td>
+                <td>
+                  <span className={'badge ' + (r.status === 'low' ? 'low' : r.status === 'moderate' ? 'warn' : 'ok')}>
+                    {r.status}
+                  </span>
+                </td>
+                <td className="muted">{r.threshold}</td>
+                <td>
+                  <button className="primary sm" onClick={() => adjust(r.bloodGroup, +1)}>+1</button>
+                  <button className="primary sm" onClick={() => adjust(r.bloodGroup, -1)}>−1</button>
+                  <button className="ghost sm" onClick={() => adjust(r.bloodGroup, +5)}>+5</button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

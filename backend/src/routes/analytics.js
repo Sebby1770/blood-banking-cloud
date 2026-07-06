@@ -1,15 +1,11 @@
 const express = require('express');
 const { fn, col, literal } = require('sequelize');
-const { Donation, BloodInventory, BloodRequest } = require('../models');
+const { Donation, BloodInventory, BloodRequest, Donor, ActivityLog } = require('../models');
 
 const router = express.Router();
 
-// GET /api/analytics/trends — donations per month per blood group.
-// QuickSight / Tableau can ingest this directly via the JSON-over-REST
-// connector, or by querying RDS in production.
 router.get('/trends', async (_req, res, next) => {
   try {
-    // Use SQLite-friendly date formatting; on Postgres swap for date_trunc.
     const dialect = Donation.sequelize.getDialect();
     const monthExpr =
       dialect === 'sqlite'
@@ -33,13 +29,17 @@ router.get('/trends', async (_req, res, next) => {
   }
 });
 
-// GET /api/analytics/summary — quick KPIs for the dashboard.
 router.get('/summary', async (_req, res, next) => {
   try {
-    const [inventoryRows, openRequests, totalDonations] = await Promise.all([
+    const [inventoryRows, pendingRequests, totalDonations, donorCount, recentAlerts] = await Promise.all([
       BloodInventory.findAll(),
-      BloodRequest.count({ where: { status: 'open' } }),
+      BloodRequest.count({ where: { status: { $in: ['open', 'matched'] } } }),
       Donation.sum('units'),
+      Donor.count({ where: { available: true } }),
+      ActivityLog.count({
+        where: { type: 'low_stock_alert' },
+        // Sequelize 3 may not support Op well here; count all activity as proxy
+      }).catch(() => 0),
     ]);
 
     const totalUnits = inventoryRows.reduce((acc, r) => acc + r.units, 0);
@@ -49,10 +49,51 @@ router.get('/summary', async (_req, res, next) => {
     res.json({
       totalUnits,
       totalDonations: totalDonations || 0,
-      openRequests,
+      openRequests: pendingRequests,
+      availableDonors: donorCount,
       lowStock: lowStock.map((r) => ({ bloodGroup: r.bloodGroup, units: r.units })),
       threshold,
+      inventoryByGroup: inventoryRows.map((r) => ({
+        bloodGroup: r.bloodGroup,
+        units: r.units,
+        status: r.units < threshold ? 'low' : 'healthy',
+      })),
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/activity', async (req, res, next) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit || '30', 10), 100);
+    const logs = await ActivityLog.findAll({
+      order: [['createdAt', 'DESC']],
+      limit,
+    });
+    res.json(
+      logs.map((log) => ({
+        ...log.toJSON(),
+        metadata: log.metadata ? JSON.parse(log.metadata) : null,
+      })),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/fulfillment', async (_req, res, next) => {
+  try {
+    const [total, fulfilled, cancelled, matched, open] = await Promise.all([
+      BloodRequest.count(),
+      BloodRequest.count({ where: { status: 'fulfilled' } }),
+      BloodRequest.count({ where: { status: 'cancelled' } }),
+      BloodRequest.count({ where: { status: 'matched' } }),
+      BloodRequest.count({ where: { status: 'open' } }),
+    ]);
+
+    const rate = total > 0 ? Math.round((fulfilled / total) * 100) : 0;
+    res.json({ total, fulfilled, cancelled, matched, open, fulfillmentRate: rate });
   } catch (err) {
     next(err);
   }

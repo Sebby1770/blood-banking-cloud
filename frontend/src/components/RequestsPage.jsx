@@ -3,7 +3,6 @@ import { api } from '../api.js';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 const URGENCY = ['low', 'medium', 'high', 'critical'];
-
 const EMPTY = { patientName: '', bloodGroup: 'O+', unitsNeeded: 1, urgency: 'medium', hospitalId: '' };
 
 export default function RequestsPage() {
@@ -11,19 +10,27 @@ export default function RequestsPage() {
   const [hospitals, setHospitals] = useState([]);
   const [form, setForm] = useState(EMPTY);
   const [matched, setMatched] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('');
   const [error, setError] = useState(null);
 
-  const load = () => Promise.all([api.requests.list(), api.hospitals.list()])
-    .then(([r, h]) => { setRequests(r); setHospitals(h); })
-    .catch((e) => setError(e.message));
+  const load = () => {
+    const params = statusFilter ? { status: statusFilter } : {};
+    return Promise.all([api.requests.list(params), api.hospitals.list()])
+      .then(([r, h]) => { setRequests(r); setHospitals(h); })
+      .catch((e) => setError(e.message));
+  };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [statusFilter]);
 
   const submit = async (e) => {
     e.preventDefault();
     setError(null);
     try {
-      const result = await api.requests.create({ ...form, unitsNeeded: parseInt(form.unitsNeeded, 10), hospitalId: parseInt(form.hospitalId, 10) });
+      const result = await api.requests.create({
+        ...form,
+        unitsNeeded: parseInt(form.unitsNeeded, 10),
+        hospitalId: parseInt(form.hospitalId, 10),
+      });
       setMatched(result.matchedDonors);
       setForm(EMPTY);
       load();
@@ -35,6 +42,15 @@ export default function RequestsPage() {
   const fulfill = async (id) => {
     try {
       await api.requests.fulfill(id);
+      load();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const cancel = async (id) => {
+    try {
+      await api.requests.cancel(id);
       load();
     } catch (err) {
       setError(err.message);
@@ -70,19 +86,30 @@ export default function RequestsPage() {
             <button className="primary" type="submit">Submit & match</button>
           </div>
         </form>
-        {error && <p style={{ color: 'var(--primary)' }}>{error}</p>}
+        {error && <p className="error-text">{error}</p>}
         {matched && (
-          <div style={{ marginTop: 12 }}>
+          <div className="match-result">
             <strong>Matched {matched.length} donor(s):</strong>{' '}
-            {matched.map((d) => `${d.name} (${d.bloodGroup}, ${d.city})`).join(', ') || '— none in same city, broaden search.'}
+            {matched.map((d) => `${d.name} (${d.bloodGroup}, ${d.city})`).join(', ') || '— none in same city.'}
           </div>
         )}
       </div>
 
       <div className="card">
+        <div className="row" style={{ marginBottom: 12 }}>
+          <label>Filter by status
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="">All</option>
+              <option value="open">Open</option>
+              <option value="matched">Matched</option>
+              <option value="fulfilled">Fulfilled</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </label>
+        </div>
         <table>
           <thead>
-            <tr><th>Patient</th><th>Group</th><th>Units</th><th>Urgency</th><th>Hospital</th><th>Status</th><th></th></tr>
+            <tr><th>Patient</th><th>Group</th><th>Units</th><th>Urgency</th><th>Hospital</th><th>Status</th><th>Actions</th></tr>
           </thead>
           <tbody>
             {requests.map((r) => (
@@ -96,10 +123,13 @@ export default function RequestsPage() {
                   </span>
                 </td>
                 <td>{r.hospital ? r.hospital.name : '—'}</td>
-                <td>{r.status}</td>
-                <td>
+                <td><span className="badge">{r.status}</span></td>
+                <td className="actions">
                   {r.status !== 'fulfilled' && r.status !== 'cancelled' && (
-                    <button className="primary" onClick={() => fulfill(r.id)}>Fulfill</button>
+                    <>
+                      <button className="primary sm" onClick={() => fulfill(r.id)}>Fulfill</button>
+                      <button className="ghost sm" onClick={() => cancel(r.id)}>Cancel</button>
+                    </>
                   )}
                 </td>
               </tr>
